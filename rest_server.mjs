@@ -3,6 +3,7 @@ import * as url from 'node:url';
 
 import { default as express } from 'express';
 import { default as sqlite3 } from 'sqlite3';
+import { default as sql_query} from 'sql-query';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
@@ -11,6 +12,9 @@ const port = 8000;
 
 let app = express();
 app.use(express.json());
+
+let sql_object  = sql_query.Query('SQLite');
+console.log(sql_object.select().from('codes').where({code: 110}).build());
 
 /********************************************************************
  ***   DATABASE FUNCTIONS                                         *** 
