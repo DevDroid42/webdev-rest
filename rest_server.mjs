@@ -68,26 +68,29 @@ function dbRun(query, params) {
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let sqlQuery = sqlGen.select().from('Codes');
+    //these are the actual params fed into the db method call
     let codes = [];
+    //this is a list of parameters used for the base sql string generation
     let paramList = [];
+    //check if the code was sent
     if(Object.hasOwn(req.query, 'code')){
+        //if it is for each code ad an element to the parm list
         codes = req.query.code.split(',');
         for (let i = 0; i < codes.length; i++) {
-            codes[i] = parseInt(codes[i]);
             paramList.push('?');
         }
         sqlQuery.where({code: paramList});    
         //this generates: "SELECT * FROM `Codes` WHERE `code` IN ('?', '?')"
-        //for each code sent comma separated
+        //when two codes are sent, for each code sent comma separated a new '?' is added to the string
     }
     dbSelect(sqlQuery.build(), codes).then(values => {
-        res.status(200).type('json').send(values); // <-- you will need to change this
+        res.status(200).type('json').send(values); 
     }).catch(err => {
-        res.status(500).type('text').send(err); // <-- you will need to change this
+        res.status(500).type('text').send(err);
     });
 });
 
-// GET request handler for neighborhoods
+// GET request handler for neighborhoods, this logic is the same as codes
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let sqlQuery = sqlGen.select().from('Neighborhoods');
@@ -96,15 +99,14 @@ app.get('/neighborhoods', (req, res) => {
     if(Object.hasOwn(req.query, 'id')){
         ids = req.query.id.split(',');
         for (let i = 0; i < ids.length; i++) {
-            ids[i] = parseInt(ids[i]);
             paramList.push('?');
         }
         sqlQuery.where({neighborhood_number : paramList});    
     }
     dbSelect(sqlQuery.build(), ids).then(values => {
-        res.status(200).type('json').send(values); // <-- you will need to change this
+        res.status(200).type('json').send(values); 
     }).catch(err => {
-        res.status(500).type('text').send(err); // <-- you will need to change this
+        res.status(500).type('text').send(err);
     });
 });
 
