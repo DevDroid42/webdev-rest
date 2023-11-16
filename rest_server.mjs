@@ -13,8 +13,8 @@ const port = 8000;
 let app = express();
 app.use(express.json());
 
-let sql_object  = sql_query.Query('SQLite');
-console.log(sql_object.select().from('codes').where({code: 110}).build());
+let sqlGen  = sql_query.Query('SQLite');
+console.log(sqlGen.select().from('codes').where({code: '?'}).build());
 
 /********************************************************************
  ***   DATABASE FUNCTIONS                                         *** 
@@ -31,6 +31,8 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 
 // Create Promise for SQLite3 database SELECT query 
 function dbSelect(query, params) {
+    //this is done to accommodate the sql generator not formatting ? correctly 
+    query = query.replaceAll("'", "");
     return new Promise((resolve, reject) => {
         db.all(query, params, (err, rows) => {
             if (err) {
@@ -45,6 +47,8 @@ function dbSelect(query, params) {
 
 // Create Promise for SQLite3 database INSERT or DELETE query
 function dbRun(query, params) {
+    //this is done to accommodate the sql generator not formatting ? correctly 
+    query = query.replaceAll("'", "");
     return new Promise((resolve, reject) => {
         db.run(query, params, (err) => {
             if (err) {
@@ -60,18 +64,48 @@ function dbRun(query, params) {
 /********************************************************************
  ***   REST REQUEST HANDLERS                                      *** 
  ********************************************************************/
-// GET request handler for crime codes
+// GET request handler for crime codes 
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    let sqlQuery = sqlGen.select().from('Codes');
+    let codes = [];
+    let paramList = [];
+    if(Object.hasOwn(req.query, 'code')){
+        codes = req.query.code.split(',');
+        for (let i = 0; i < codes.length; i++) {
+            codes[i] = parseInt(codes[i]);
+            paramList.push('?');
+        }
+        sqlQuery.where({code: paramList});    
+        //this generates: "SELECT * FROM `Codes` WHERE `code` IN ('?', '?')"
+        //for each code sent comma separated
+    }
+    dbSelect(sqlQuery.build(), codes).then(values => {
+        res.status(200).type('json').send(values); // <-- you will need to change this
+    }).catch(err => {
+        res.status(500).type('text').send(err); // <-- you will need to change this
+    });
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    let sqlQuery = sqlGen.select().from('Neighborhoods');
+    let ids = [];
+    let paramList = [];
+    if(Object.hasOwn(req.query, 'id')){
+        ids = req.query.id.split(',');
+        for (let i = 0; i < ids.length; i++) {
+            ids[i] = parseInt(ids[i]);
+            paramList.push('?');
+        }
+        sqlQuery.where({neighborhood_number : paramList});    
+    }
+    dbSelect(sqlQuery.build(), ids).then(values => {
+        res.status(200).type('json').send(values); // <-- you will need to change this
+    }).catch(err => {
+        res.status(500).type('text').send(err); // <-- you will need to change this
+    });
 });
 
 // GET request handler for crime incidents
