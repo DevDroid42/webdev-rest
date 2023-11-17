@@ -70,12 +70,13 @@ app.get('/codes', (req, res) => {
     let sqlQuery = sqlGen.select().from('Codes');
     //these are the actual params fed into the db method call
     let codes = [];
-    //this is a list of parameters used for the base sql string generation
-    let paramList = [];
     //check if the code was sent
     if(Object.hasOwn(req.query, 'code')){
-        //if it is for each code ad an element to the parm list
+        //if it is for each code add an element to the param list
         codes = req.query.code.split(',');
+        
+        //this is a list of parameters used for the base sql string generation
+        let paramList = [];
         for (let i = 0; i < codes.length; i++) {
             paramList.push('?');
         }
