@@ -14,6 +14,8 @@ let app = express();
 app.use(express.json());
 
 let sqlGen  = sql_query.Query('SQLite');
+console.log(sqlGen.remove().from('codes').where({code: '?'}).build());
+console.log(sqlGen.update().into('codes').set({newData: '?'}).where({code: '?'}).build());
 console.log(sqlGen.select().from('codes').where({code: '?'}).build());
 
 /********************************************************************
@@ -74,7 +76,7 @@ app.get('/codes', (req, res) => {
     if(Object.hasOwn(req.query, 'code')){
         //if it is for each code add an element to the param list
         codes = req.query.code.split(',');
-        
+
         //this is a list of parameters used for the base sql string generation
         let paramList = [];
         for (let i = 0; i < codes.length; i++) {
@@ -96,9 +98,9 @@ app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let sqlQuery = sqlGen.select().from('Neighborhoods');
     let ids = [];
-    let paramList = [];
     if(Object.hasOwn(req.query, 'id')){
         ids = req.query.id.split(',');
+        let paramList = [];
         for (let i = 0; i < ids.length; i++) {
             paramList.push('?');
         }
