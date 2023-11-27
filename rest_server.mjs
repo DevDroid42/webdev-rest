@@ -115,9 +115,50 @@ app.get('/neighborhoods', (req, res) => {
 
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    let { start_date, end_date, code, grid, neighborhood, limit} = req.query;
+
+    start_date = new Date(start_date);
+    end_date = new Date(end_date);
+    let codes = code ? code.split(',') : false;
+    let grids = grid ? grid.split(',') : false;
+    let neighborhoods = neighborhood ? neighborhood.split(',') : false;
+    limit = limit ? limit : 1000;
+
+    let sqlQuery = sqlGen.select().from('Incidents');
+    dbSelect(sqlQuery.build(),[]).then((incidents) => {
+        incidents.sort((a, b) => {
+            let date_time_a = new Date(a.date_time);
+            let date_time_b = new Date(b.date_time);
+            return date_time_b - date_time_a;
+        })
+        incidents = incidents.filter((incident) => {
+            let date = new Date(incident.date_time)
+            return (date >= start_date && date <= end_date) 
+            && (!codes || codes.includes(incident.code.toString())) 
+            && (!grids || grids.includes(incident.grid.toString()))
+            && (!neighborhoods || neighborhoods.includes(incident.neighborhood))})
+        if(incidents.length > 0){
+            incidents = incidents.slice(0, limit);
+            for(let i=0; i<incidents.length; i++){
+                let [date, time] = incidents[i].date_time.split('T');
+                incidents[i] = {
+                    case_number: incidents[i].case_number,
+                    date: date,
+                    time: time,
+                    code: incidents[i].code,
+                    incident: incidents[i].incident,
+                    police_grid: incidents[i].police_grid,
+                    neighborhood_number: incidents[i].neighborhood_number,
+                    block: incidents[i].block
+                }
+            }
+            res.status(200).type('json').send(incidents);
+        } else{
+            res.status(404).type('json').send('No incidents found with selected parameters')
+        }
+    }).catch((err) => {
+        res.status(500).type('text').send(err);
+    })
 });
 
 // PUT request handler for new crime incident
