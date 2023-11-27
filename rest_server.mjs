@@ -170,9 +170,20 @@ app.put('/new-incident', (req, res) => {
 
 // DELETE request handler for new crime incident
 app.delete('/remove-incident', (req, res) => {
-    console.log(req.body); // uploaded data
-    
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+    console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let sqlQuery = sqlGen.remove().from('Incidents');
+    if(Object.hasOwn(req.query, 'case_number')){
+        sqlQuery.where({neighborhood_number : '?'});    
+    }
+    dbSelect(sqlQuery.build(), [req.query.case_number]).then(values => {
+        if(values.length == 0){
+            res.status(500).type('text').send('case not found');
+        }else{
+            res.status(200).type('json').send(values); 
+        }
+    }).catch(err => {
+        res.status(500).type('text').send(err);
+    });
 });
 
 /********************************************************************
