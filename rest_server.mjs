@@ -151,7 +151,6 @@ app.get('/incidents', (req, res) => {
         if(start_date || end_date){
             result = result.filter((incident) => {
             let date = new Date(incident.date_time)
-            sqlQuery.where({date_time: sql_query.gte(start_date+' 00:00:00')});
             
             return (date >= start_date && date <= end_date);
             })
