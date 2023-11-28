@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as url from 'node:url';
 
-import { default as express } from 'express';
+import { default as express, response } from 'express';
 import { default as sqlite3 } from 'sqlite3';
 import { default as sql_query} from 'sql-query';
 
@@ -117,8 +117,8 @@ app.get('/neighborhoods', (req, res) => {
 app.get('/incidents', (req, res) => {
     let { start_date, end_date, code, grid, neighborhood, limit} = req.query;
 
-    start_date = new Date(start_date);
-    end_date = new Date(end_date);
+    start_date = start_date ? new Date(start_date): new Date(-8640000000000000);
+    end_date = end_date ? new Date(end_date) : new Date(8640000000000000);
     let codes = code ? code.split(',') : false;
     let grids = grid ? grid.split(',') : false;
     let neighborhoods = neighborhood ? neighborhood.split(',') : false;
@@ -189,15 +189,21 @@ app.put('/new-incident', (req, res) => {
 // DELETE request handler for new crime incident
 app.delete('/remove-incident', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    let sqlQuery = sqlGen.remove().from('Incidents');
-    if(Object.hasOwn(req.query, 'case_number')){
-        sqlQuery.where({neighborhood_number : '?'});    
+    if(!Object.hasOwn(req.query, 'case_number')){
+        res.status(400).type('text').send("missing case number");
     }
+    let sqlQuery = sqlGen.select().from('Incidents').where({case_number: '?'});
+    let sqlDelete = sqlGen.remove().from('Incidents').where({case_number: '?'});
+    
     dbSelect(sqlQuery.build(), [req.query.case_number]).then(values => {
         if(values.length == 0){
             res.status(500).type('text').send('case not found');
         }else{
-            res.status(200).type('json').send(values); 
+            dbRun(sqlDelete.build(), [req.query.case_number]).then(response => {
+                res.status(200).type('text').send(values);
+            }).catch(err => {
+                res.status(500).type('text').send(err);
+            });
         }
     }).catch(err => {
         res.status(500).type('text').send(err);
@@ -211,4 +217,3 @@ app.delete('/remove-incident', (req, res) => {
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
-    
