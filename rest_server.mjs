@@ -164,7 +164,25 @@ app.get('/incidents', (req, res) => {
 // PUT request handler for new crime incident
 app.put('/new-incident', (req, res) => {
     console.log(req.body); // uploaded data
+    let data = req.body;
     
+    let dateTime = data.date + data.time;
+    console.log(dateTime);
+    let sqlQuery = sqlGen.insert().into('Incidents');
+    
+    // if statement that sends status 500 if case number already exists
+    // data fields: case_number, date, time, code, incident, police_grid, neighborhood_number, block
+    // need to break up the data fields in the request to and use set to insert 
+    sqlQuery.set({case_number: data.case_number, date_time: dateTime, code: data.code, incident: data.incident, police_grid: data.police_grid, neighborhood_number: data.neighborhood_number, block: data.block}); 
+    
+    console.log(dbRun(sqlQuery.build(), data));
+    dbRun(sqlQuery.build(), data).then(data => {
+        res.status(200).type('json').send(data);
+        console.log("sent");
+    }).catch(err => {
+        res.status(500).type('text').send(err);
+    });
+
     res.status(200).type('txt').send('OK'); // <-- you may need to change this
 });
 
