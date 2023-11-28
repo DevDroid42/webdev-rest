@@ -193,3 +193,4 @@ app.delete('/remove-incident', (req, res) => {
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
+    
