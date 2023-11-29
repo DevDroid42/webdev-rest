@@ -57,7 +57,7 @@ function dbRun(query, params) {
                 reject(err);
             }
             else {
-                resolve("successfully added case");
+                resolve();
             }
         });
     });
@@ -168,15 +168,7 @@ app.put('/new-incident', (req, res) => {
     
     let dateTime = data.date + data.time;
     let sqlQuery = sqlGen.insert().into('Incidents');
-    let keyValue = []; 
-    keyValue = req.body;
-    console.log(keyValue);
-    let paramList = [];
-    for (let i = 0; i < 7; i++) {
-        paramList.push('?');
-    }
-    console.log(paramList);
-    sqlQuery.where({neighborhood_number : paramList}, {case_number : paramList});    
+    
     // if statement that sends status 500 if case number already exists
     // data fields: case_number, date, time, code, incident, police_grid, neighborhood_number, block
     // need to break up the data fields in the request to and use set to insert 
@@ -184,7 +176,7 @@ app.put('/new-incident', (req, res) => {
     let params = [data.case_number,dateTime,data.code,data.incident,data.police_grid,data.neighborhood_number,data.block];
 
     dbRun(sqlQuery.build(), params).then(data => {
-        res.status(200).type('json').send(data);
+        res.status(200).type('json').send("added case");
         console.log("sent");
     }).catch(err => {
         res.status(500).type('text').send(err);
