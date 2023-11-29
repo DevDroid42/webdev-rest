@@ -167,9 +167,16 @@ app.put('/new-incident', (req, res) => {
     let data = req.query;
     
     let dateTime = data.date + data.time;
-    console.log(dateTime);
     let sqlQuery = sqlGen.insert().into('Incidents');
-    
+    let keyValue = []; 
+    keyValue = req.body;
+    console.log(keyValue);
+    let paramList = [];
+    for (let i = 0; i < 7; i++) {
+        paramList.push('?');
+    }
+    console.log(paramList);
+    sqlQuery.where({neighborhood_number : paramList}, {case_number : paramList});    
     // if statement that sends status 500 if case number already exists
     // data fields: case_number, date, time, code, incident, police_grid, neighborhood_number, block
     // need to break up the data fields in the request to and use set to insert 
