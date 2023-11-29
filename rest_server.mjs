@@ -119,43 +119,58 @@ app.get('/incidents', (req, res) => {
 
     start_date = start_date ? new Date(start_date): new Date(-8640000000000000);
     end_date = end_date ? new Date(end_date) : new Date(8640000000000000);
-    let codes = code ? code.split(',') : false;
-    let grids = grid ? grid.split(',') : false;
-    let neighborhoods = neighborhood ? neighborhood.split(',') : false;
+
+    let codes = code ? code.split(',') : [];
+    let grids = grid ? grid.split(',') : [];
+    let neighborhoods = neighborhood ? neighborhood.split(',') : [];
     limit = limit ? limit : 1000;
 
     let sqlQuery = sqlGen.select().from('Incidents');
-    dbSelect(sqlQuery.build(),[]).then((incidents) => {
-        incidents.sort((a, b) => {
-            let date_time_a = new Date(a.date_time);
-            let date_time_b = new Date(b.date_time);
-            return date_time_b - date_time_a;
-        })
-        incidents = incidents.filter((incident) => {
-            let date = new Date(incident.date_time)
-            return (date >= start_date && date <= end_date) 
-            && (!codes || codes.includes(incident.code.toString())) 
-            && (!grids || grids.includes(incident.grid.toString()))
-            && (!neighborhoods || neighborhoods.includes(incident.neighborhood))})
-        if(incidents.length > 0){
-            incidents = incidents.slice(0, limit);
-            for(let i=0; i<incidents.length; i++){
-                let [date, time] = incidents[i].date_time.split('T');
-                incidents[i] = {
-                    case_number: incidents[i].case_number,
-                    date: date,
-                    time: time,
-                    code: incidents[i].code,
-                    incident: incidents[i].incident,
-                    police_grid: incidents[i].police_grid,
-                    neighborhood_number: incidents[i].neighborhood_number,
-                    block: incidents[i].block
-                }
-            }
-            res.status(200).type('json').send(incidents);
-        } else{
-            res.status(404).type('json').send('No incidents found with selected parameters')
+    if(codes.length > 0){
+        let paramList = [];
+        for (let i = 0; i < codes.length; i++) {
+            paramList.push('?');
         }
+        sqlQuery.where({code: paramList});
+    } 
+    if(grids.length > 0){
+        let paramList = [];
+        for (let i = 0; i < grids.length; i++) {
+            paramList.push('?');
+        }
+        sqlQuery.where({police_grid: paramList});
+    } 
+    if(neighborhoods.length > 0){
+        let paramList = [];
+        for (let i = 0; i < grids.length; i++) {
+            paramList.push('?');
+        }
+        sqlQuery.where({neighborhood_number: paramList});
+    } 
+    dbSelect(sqlQuery.build(), [...codes, ...grids, ...neighborhoods]).then((result) => {
+        if(start_date || end_date){
+            result = result.filter((incident) => {
+            let date = new Date(incident.date_time)
+            
+            return (date >= start_date && date <= end_date);
+            })
+        } 
+        for (let i = 0; i < result.length; i++) {
+            let [date, time] = result[i].date_time.split('T')
+            result[i] = {
+                case_number: result[i].case_number,
+                date: date,
+                time: time,
+                code: result[i].code,
+                incident: result[i].incident,
+                police_grid: result[i].police_grid,
+                neighborhood_number: result[i].neighborhood_number,
+                block: result[i].block
+            }
+        }
+        result = result.reverse();
+        result = result.slice(0,limit)
+        res.status(200).type('json').send(result);
     }).catch((err) => {
         res.status(500).type('text').send(err);
     })
